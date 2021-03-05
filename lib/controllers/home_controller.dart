@@ -1,0 +1,63 @@
+import 'package:flutter/cupertino.dart';
+import 'package:tunico/data/models/agenda_model.dart';
+import 'package:tunico/data/models/usuario_model.dart';
+import 'package:tunico/data/providers/fire_base_auth_provider.dart';
+import 'package:tunico/data/repositories/agenda_repository.dart';
+import 'package:tunico/data/repositories/usuario_repository.dart';
+import 'package:tunico/routes/app_routes.dart';
+
+class HomeController{
+  final _agendaRepository = new AgendaRepository();
+  final pesquisaController = TextEditingController();
+  final _usuarioRepository = UsuarioRepository();
+  List<AgendaModel> itens = new List<AgendaModel>();
+  List<AgendaModel> _listaItens = new List<AgendaModel>();
+  final auth = new FireBaseAuthProvider();
+
+  void gerenciarConta(BuildContext context){
+    Navigator.of(context).pushNamed(AppRoutes.CONTA);
+  }
+
+  void sair(BuildContext context){
+    auth.efetuarLogoff();
+    Navigator.of(context).pushReplacementNamed(AppRoutes.LOGIN);
+  }
+
+  Future<void> atualizarItens() async {
+    print("Atualizar itens");
+    try{
+      Map authData = auth.getUserData();
+      UsuarioModel usuarioData = await _usuarioRepository.selecionarPorId(authData['uid']);
+      if (usuarioData.agendas != null){
+        _listaItens = await _agendaRepository.selecionarTodos(agendas: usuarioData.agendas);
+        pesquisar();
+      }
+    }
+    catch (ex){
+      
+    }
+  }
+
+  // void excluirItem(String uid) async {
+  //   await _itemRepository.excluir(new ItemModel(id: uid));
+  // }
+
+  Future<void> pesquisar() async{
+    itens.clear();
+    if (pesquisaController.text == ""){
+      for (int i = 0; i < _listaItens.length; i++) {
+        itens.add(_listaItens[i]);
+      }
+    }
+    else {
+      print("Pesquisa");
+      print(_listaItens.length);
+      for (int i = 0; i < _listaItens.length; i++) {
+        if (_listaItens[i].nome.contains(pesquisaController.text)) {
+          print(_listaItens[i].nome);
+          itens.add(_listaItens[i]);
+        }
+      }
+    }
+  }
+}
